@@ -2,16 +2,16 @@ import {
   Autocomplete,
   Box,
   Button,
+  FormControlLabel,
   Modal,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from "@mui/material";
-import { useMemo, useState } from "react";
-import uniq from "lodash/uniq";
-import compact from "lodash/compact";
-
+import { useEffect, useState } from "react";
 import { parseTime } from "../../../utils/parse-time";
+import { collectionAPI } from "../../../routes/collection/collection";
 
 const style = {
   position: "absolute",
@@ -27,69 +27,86 @@ const style = {
 };
 
 export const FilterModal = ({
-  defaultValues,
-  courses,
   isOpened,
+  section,
+  startTime,
+  endTime,
+  showAvail,
   onClose,
   onFilter,
+  onSetSection,
+  onSetEndTime,
+  onSetStartTime,
+  onSetShowAvail,
 }) => {
-  const [filter, setFilter] = useState(defaultValues);
+  const [startTimes, setStartTimes] = useState([]);
+  const [endTimes, setEndTimes] = useState([]);
+  const sections = Array.from({ length: 30 }, (_, index) => {
+    return (index + 1).toString().padStart(2, "0");
+  });
 
-  const sectionOptions = useMemo(() => {
-    const sections = courses.map((course) => course.section);
+  const [initialStartTime, setInitialStartTime] = useState(startTime);
+  const [initialEndTime, setInitialEndTime] = useState(endTime);
+  const [initialSection, setInitialSection] = useState(section);
+  const [initialShowAvail, setInitialShowAvail] = useState(showAvail);
 
-    return uniq(sections);
-  }, [courses]);
-
-  const startTimeOptions = useMemo(() => {
-    const startTimes = courses.map((course) => course.start_time);
-
-    return compact(uniq(startTimes));
-  }, [courses]);
-
-  const endTimeOptions = useMemo(() => {
-    const endTimes = courses.map((course) => course.end_time);
-
-    return compact(uniq(endTimes));
-  }, [courses]);
-
-  const handleFilterSelect = (key, value) => {
-    setFilter({
-      ...filter,
-      [key]: value,
-    });
+  const handleSetStartTime = (val) => {
+    onSetStartTime(val);
   };
 
+  const handleSetEndTime = (val) => {
+    onSetEndTime(val);
+  };
+
+  const handleSetSection = (val) => {
+    onSetSection(val);
+  };
+
+  const getTimes = async () => {
+    return await collectionAPI.getUniqueTimesFromFirebase();
+  };
+
+  useEffect(() => {
+    getTimes().then((resp) => {
+      setStartTimes(resp?.startTimes);
+      setEndTimes(resp?.endTimes);
+    });
+  }, []);
+
   const handleFilter = () => {
+    // Check if any of the values (startTime, endTime, section, showAvail) have changed
+    const hasFilterChanged =
+      startTime !== initialStartTime ||
+      endTime !== initialEndTime ||
+      section !== initialSection ||
+      showAvail !== initialShowAvail;
+
+    onFilter(hasFilterChanged);
+
     onClose();
-    onFilter(filter);
   };
 
   return (
     <Modal
       open={isOpened}
       onClose={onClose}
-      aria-labelledby="modal-modal-title"
-      aria-describedby="modal-modal-description"
+      aria-labelledby="course-filter-modal"
+      id="course-filter-modal"
     >
-      <Box sx={{ ...style, width: 400 }}>
-        <Typography
-          id="modal-modal-title"
-          variant="h5"
-          component="h2"
-          style={{ fontWeight: 600 }}
-        >
+      <Box id="course-filter-inner" sx={{ ...style, width: 400 }}>
+        <Typography variant="h5" component="h2" style={{ fontWeight: 600 }}>
           Course Filter
         </Typography>
 
         <Autocomplete
           sx={{ mt: 2 }}
-          options={sectionOptions}
+          id="section-input"
+          options={sections}
           renderInput={(params) => (
             <TextField {...params} label="Section" size="small" />
           )}
-          onChange={(_, value) => handleFilterSelect("section", value)}
-          defaultValue={filter.section}
+          onChange={(_, value) => handleSetSection(value)}
+          defaultValue={section}
         />
 
         <Stack
@@ -100,7 +117,8 @@ export const FilterModal = ({
         >
           <Autocomplete
             sx={{ mt: 2, flex: 1 }}
-            options={startTimeOptions}
+            id="start-time-input"
+            options={startTimes}
             renderInput={(params) => (
               <TextField {...params} label="Start Time" size="small" />
             )}
@@ -110,13 +128,14 @@ export const FilterModal = ({
                 {parseTime(option)}
               </Typography>
             )}
-            onChange={(_, value) => handleFilterSelect("startTime", value)}
-            defaultValue={filter.startTime}
+            onChange={(_, value) => handleSetStartTime(value)}
+            defaultValue={startTime}
           />
 
           <Autocomplete
             sx={{ mt: 2, flex: 1 }}
-            options={endTimeOptions}
+            id="end-time-input"
+            options={endTimes}
             renderInput={(params) => (
               <TextField {...params} label="End Time" size="small" />
             )}
@@ -126,14 +145,32 @@ export const FilterModal = ({
                 {parseTime(option)}
               </Typography>
             )}
-            onChange={(_, value) => handleFilterSelect("endTime", value)}
-            defaultValue={filter.endTime}
+            onChange={(_, value) => handleSetEndTime(value)}
+            defaultValue={endTime}
+          />
+        </Stack>
+
+        <Stack mt={1}>
+          <FormControlLabel
+            value="end"
+            id="available-classes-input"
+            control={
+              <Switch
+                color="primary"
+                checked={showAvail}
+                onChange={(v) => onSetShowAvail(v.target.checked)}
+              />
+            }
+            label="Show available classes only"
+            labelPlacement="start"
+            style={{ marginLeft: "auto" }}
           />
         </Stack>
 
         <Box sx={{ textAlign: "right", mt: 3 }}>
           <Button
             variant="contained"
+            id="filter-button"
             style={{ marginLeft: "auto" }}
             onClick={handleFilter}
           >

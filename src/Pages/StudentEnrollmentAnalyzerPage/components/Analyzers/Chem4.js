@@ -34,21 +34,30 @@ import { collectionAPI } from "../../../../routes/collection/collection";
 import { ExpandMore } from "@mui/icons-material";
 import axios from "axios";
 
-const useGetCourses = (params) => {
+const useGetCourses = (variable = "fall-2024") => {
   const [courses, setCourses] = useState([]);
-
+  
   const handleGetCourses = useCallback(async () => {
-    const retrievedCourses = await collectionAPI.getCollection("courses");
+    try {
+      // Construct the URL dynamically using the variable, defaulting to "fall-2024"
+      const url = `https://www.csus.edu/class-schedule/${variable}/CHEM`;
+      
+      // Send the constructed URL to the server
+      const retrievedCourses = await collectionAPI.getCollection("courses", { url });
 
-    setCourses(retrievedCourses);
-  }, []);
+      setCourses(retrievedCourses);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    }
+  }, [variable]);
 
   useEffect(() => {
     handleGetCourses();
-  }, []);
+  }, [handleGetCourses]);
 
   return courses;
 };
+
 
 // Function to parse time in "HHMMAM/PM" format
 function parseTime(time) {

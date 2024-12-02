@@ -57,7 +57,7 @@ function HomeMainPage() {
 
     const timer = setTimeout(() => {
       setNotifications([]);
-    }, 10000);
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, [location.state]);
@@ -123,7 +123,12 @@ function HomeMainPage() {
             >
               Access Analyzer
             </Typography>
-            <Button component="a" href="/search" sx={buttonStyle}>
+            <Button
+              id="search-courses-link"
+              component="a"
+              href="/search"
+              sx={buttonStyle}
+            >
               Search Courses
             </Button>
             <Button
@@ -133,10 +138,12 @@ function HomeMainPage() {
             >
               Student Enrollment Analyzer
             </Button>
-            <Button component="a" href="/CourseTimeAnalyzer" sx={buttonStyle}>
-              Course Time Analyzer
-            </Button>
-            <Button component="a" href="/StudentAvailability" sx={buttonStyle}>
+            <Button
+              id="student_availability"
+              component="a"
+              href="/StudentAvailability"
+              sx={buttonStyle}
+            >
               Student Availability
             </Button>
             <Typography

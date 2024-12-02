@@ -1,42 +1,15 @@
 # pip install selenium
-# pip install python-dotenv
-# This login script uses a .env file.
-# Setup .env file in same folder as the script.
-# .env file has two fields: "LOGIN_EMAIL" & "LOGIN_PASSWORD"
 
-import os
 import sys
 import time
-from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
-
-#get current directory of script
-current_directory = os.path.dirname(os.path.abspath(__file__))
-
-#check if .env file exists
-if not os.path.isfile(os.path.join(current_directory, ".env")):
-    print(".env file not found")
-    sys.exit(1)
-
-#Load email and password from .env file
-load_dotenv()
-
-#check if .env file is setup
-if not os.getenv("LOGIN_EMAIL") or not os.getenv("LOGIN_PASSWORD"):
-    print(".env file is not properly setup")
-    sys.exit(1)
-    
-#get email from .env
-email = os.getenv("LOGIN_EMAIL")
-#Retrieve password from .env file
-password = os.getenv("LOGIN_PASSWORD")
     
 #Setup chrome driver
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+driver = webdriver.Chrome()
 
 #Login
 try:
@@ -77,27 +50,46 @@ except Exception as e:
     print(f"Error: {e}")
     driver.quit()
     sys.exit(1)
-   
-#Go to menu and click logout    
-try:
-    time.sleep(2)
-    menu_button = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.ID, 'menu_button'))
-    )
-    menu_button.click()
-
-    logout_button = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.ID, 'logout_button'))
-    )
-    time.sleep(2)
-    logout_button.click()
     
-    try:
-        WebDriverWait(driver, 5).until(EC.url_to_be('http://localhost:3000/Login'))
-        print("Logout successful")
-        time.sleep(4)
-    except TimeoutException:
-        print("Logout button did not lead to login page")
+#Go to student availability page
+try:
+    availability_page = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.ID, 'student_availability'))
+    )
+    time.sleep(1)
+    availability_page.click()
+    new_course = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.ID, 'new_course'))
+    )
+    new_course.click()
+    new_course.send_keys("TEST123")
+    add_course = driver.find_element(By.ID, 'add_course')
+    add_course.click()
+    
+    student_name = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.ID, 'student_name'))
+    )
+    student_name.send_keys("Test Tester")
+    
+    # Select days
+    days = ["Monday", "Wednesday", "Friday"]
+    for day in days:
+        day_checkbox = driver.find_element(By.NAME, day)
+        day_checkbox.click()
+        
+    # Add time slots
+    start_time_input = driver.find_element(By.ID, 'start_time')
+    start_time_input.click()
+    start_time_input.send_keys("09:00AM")
+    end_time_input = driver.find_element(By.ID, 'end_time')
+    end_time_input.click()
+    end_time_input.send_keys("11:00AM")
+
+    # Submit the form
+    submit_button = driver.find_element(By.ID, 'submit_button')
+    submit_button.click()
+ 
+    time.sleep(4)
     
 except TimeoutException:
     print("Could not find menu button in time") 
@@ -106,4 +98,3 @@ except Exception as e:
     print(f"Error: {e}")
 finally:
     driver.quit()
-    
